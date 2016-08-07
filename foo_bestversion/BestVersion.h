@@ -27,5 +27,6 @@ metadb_handle_ptr getBestTrackByTitle(const std::string& title, const pfc::list_
 
 void findAllDeadItemsInAllPlaylists();
 void findDeadItemsInPlaylist(t_size playlist, pfc::list_base_t<metadb_handle_ptr>& track_list);
+void selectDeadItemsInActivePlaylist();
 
 } // namespace bestversion

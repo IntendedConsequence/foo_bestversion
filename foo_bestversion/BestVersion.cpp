@@ -383,8 +383,11 @@ void findAllDeadItemsInAllPlaylists()
 	t_size playlist_count = pm->get_playlist_count();
 	pfc::list_t<metadb_handle_ptr> dead_tracks;
 	std::string output_playlist_name = "[foo_bestversion]DEAD ITEMS";
+	pfc::string8 current_playlist_name;
 	for (t_size playlist_index = 0; playlist_index < playlist_count; playlist_index++)
 	{
+		pm->playlist_get_name(playlist_index, current_playlist_name);
+		console::info((std::string("Processing playlist: ") + current_playlist_name.c_str()).c_str());
 		findDeadItemsInPlaylist(playlist_index, dead_tracks);
 	}
 	t_size output_playlist = pm->find_playlist(output_playlist_name.c_str(), pfc_infinite);
@@ -415,12 +418,41 @@ void findDeadItemsInPlaylist(t_size playlist, pfc::list_base_t<metadb_handle_ptr
 	abort_callback_dummy abort;
 	for (t_size index = 0; index < all_tracks.get_count(); index++)
 	{
-		if (!filesystem::g_exists(all_tracks[index]->get_path(), abort)) 
+		if (strstr(all_tracks[index]->get_path(), "3dydfy") == NULL)
 		{
-			track_list.add_item(all_tracks[index]);
+			if (!filesystem::g_exists(all_tracks[index]->get_path(), abort))
+			{
+				track_list.add_item(all_tracks[index]);
+			}
 		}
 	}
 
+}
+
+void selectDeadItemsInActivePlaylist()
+{
+	static_api_ptr_t<playlist_manager> pm;
+	size_t active_playlist = pm->get_active_playlist();
+	pfc::list_t<metadb_handle_ptr> all_tracks;
+	pm->playlist_get_all_items(active_playlist, all_tracks);
+	abort_callback_dummy abort;
+
+	unsigned total = pm->activeplaylist_get_item_count();
+	bit_array_bittable mask(total);
+
+	for (t_size index = 0; index < all_tracks.get_count(); index++)
+	{
+		if (strstr(all_tracks[index]->get_path(), "3dydfy") == NULL && !filesystem::g_exists(all_tracks[index]->get_path(), abort))
+		{
+			mask.set(index, true);
+		}
+		else
+		{
+			mask.set(index, false);
+		}
+	}
+	
+	pm->activeplaylist_set_selection(bit_array_true(), mask);
 }
 
 //------------------------------------------------------------------------------
