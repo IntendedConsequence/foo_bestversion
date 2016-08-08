@@ -79,6 +79,35 @@ inline bool isTrackByArtist(const std::string& artist, const metadb_handle_ptr& 
 }
 
 //------------------------------------------------------------------------------
+bool doesTrackHaveExactTrackNumber(const std::string& track_number, const metadb_handle_ptr& track)
+{
+	service_ptr_t<metadb_info_container> outInfo;
+	if (!track->get_async_info_ref(outInfo))
+	{
+		return false;
+	}
+
+	const file_info& fileInfo = outInfo->info();
+
+	if (!fileInfo.meta_exists("tracknumber"))
+	{
+		return false;
+	}
+
+	auto track_number_noleading = track_number;
+	track_number_noleading.erase(0, track_number_noleading.find_first_not_of('0')); //remove leading zeros
+
+	std::string fileTag = fileInfo.meta_get("tracknumber", 0);
+	fileTag.erase(0, fileTag.find_first_not_of('0')); //remove leading zeros
+
+
+	if (stricmp_utf8(fileTag.c_str(), track_number_noleading.c_str()) == 0)
+	{
+		return true;
+	}
+
+	return false;
+}
 
 bool doesTrackHaveExactTagFieldValue(const std::string& field_name, const std::string& field_value, const metadb_handle_ptr& track) {
 	// todo: ignore slight differences, e.g. in punctuation
@@ -160,6 +189,18 @@ void filterTracksByArtist(const std::string& artist, pfc::list_base_t<metadb_han
 	for(t_size i = 0; i < n; i++)
 	{
 		deleteMask.set(i, !isTrackByArtist(artist, tracks[i]));
+	}
+
+	tracks.remove_mask(deleteMask);
+}
+
+void filterTracksByTrackNumber(const std::string& track_number, pfc::list_base_t<metadb_handle_ptr>& tracks) {
+	const t_size n = tracks.get_count();
+	bit_array_bittable deleteMask(n);
+
+	for (t_size i = 0; i < n; i++)
+	{
+		deleteMask.set(i, !doesTrackHaveExactTrackNumber(track_number, tracks[i]));
 	}
 
 	tracks.remove_mask(deleteMask);

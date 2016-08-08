@@ -12,9 +12,11 @@ bool isTrackByArtist(const std::string& artist, const metadb_handle_ptr& track);
 
 bool doesTrackHaveExactTagFieldValue(const std::string& field_name, const std::string& field_value, const metadb_handle_ptr& track);
 bool doesTrackHaveSimilarTitle(const std::string& title, const metadb_handle_ptr& track, bool exact=false);
+bool doesTrackHaveExactTrackNumber(const std::string& track_number, const metadb_handle_ptr& track);
 
 void filterTracksByTagField(const std::string& field_name, const std::string& field_value, pfc::list_base_t<metadb_handle_ptr>& tracks);
 void filterTracksByArtist(const std::string& artist, pfc::list_base_t<metadb_handle_ptr>& tracks);
+void filterTracksByTrackNumber(const std::string& track_number, pfc::list_base_t<metadb_handle_ptr>& tracks);
 
 void filterTracksByCloseTitle(const std::string& title, pfc::list_base_t<metadb_handle_ptr>& tracks, bool exact=false);
 
