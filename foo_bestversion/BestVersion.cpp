@@ -467,7 +467,6 @@ void findDeadItemsInPlaylist(t_size playlist, pfc::list_base_t<metadb_handle_ptr
 			}
 		}
 	}
-
 }
 
 void selectDeadItemsInActivePlaylist()
@@ -494,6 +493,59 @@ void selectDeadItemsInActivePlaylist()
 	}
 	
 	pm->activeplaylist_set_selection(bit_array_true(), mask);
+}
+
+void findAllNonLibraryItemsInAllPlaylists()
+{
+	static_api_ptr_t<playlist_manager> pm;
+	t_size playlist_count = pm->get_playlist_count();
+	pfc::list_t<metadb_handle_ptr> outside_tracks;
+	std::string output_playlist_name = "[foo_bestversion]OUTSIDE ITEMS";
+	pfc::string8 current_playlist_name;
+	for (t_size playlist_index = 0; playlist_index < playlist_count; playlist_index++)
+	{
+		pm->playlist_get_name(playlist_index, current_playlist_name);
+		console::info((std::string("Processing playlist: ") + current_playlist_name.c_str()).c_str());
+		findNonLibraryItemsInPlaylist(playlist_index, outside_tracks);
+	}
+	t_size output_playlist = pm->find_playlist(output_playlist_name.c_str(), pfc_infinite);
+
+	if (output_playlist != pfc_infinite)
+	{
+		pm->playlist_undo_backup(output_playlist);
+		pm->playlist_clear(output_playlist);
+	}
+	else
+	{
+		output_playlist = pm->create_playlist(
+			output_playlist_name.c_str(),
+			pfc_infinite,
+			pfc_infinite
+		);
+	}
+
+	pm->playlist_add_items(output_playlist, outside_tracks, bit_array_true());
+	pm->set_active_playlist(output_playlist);
+	pm->set_playing_playlist(output_playlist);
+}
+
+void findNonLibraryItemsInPlaylist(t_size playlist, pfc::list_base_t<metadb_handle_ptr>& track_list)
+{
+	static_api_ptr_t<playlist_manager> pm;
+	static_api_ptr_t<library_manager> lm;
+	pfc::list_t<metadb_handle_ptr> all_tracks;
+	pm->playlist_get_all_items(playlist, all_tracks);
+
+	for (t_size index = 0; index < all_tracks.get_count(); index++)
+	{
+		if (strstr(all_tracks[index]->get_path(), "3dydfy") == NULL)
+		{
+			if (!lm->is_item_in_library(all_tracks[index]))
+			{
+				track_list.add_item(all_tracks[index]);
+			}
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
