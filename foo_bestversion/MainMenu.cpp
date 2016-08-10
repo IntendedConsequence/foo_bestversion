@@ -21,6 +21,7 @@ class mainmenu_edit_commands : public mainmenu_commands {
 public:
 	enum {
 		cmd_select_dead = 0,
+		cmd_select_nonlibrary,
 		cmd_findalldead,
 		cmd_findallnonlibrary,
 		cmd_total
@@ -35,12 +36,17 @@ public:
 		// {E45AED1B-2A80-4A94-BAE0-0FD3C55BFAED}
 		static const GUID guid_findalldead = { 0xe45aed1b, 0x2a80, 0x4a94,{ 0xba, 0xe0, 0xf, 0xd3, 0xc5, 0x5b, 0xfa, 0xed } };
 
+		// {22D1A566-BED6-46DA-BD9E-0CCC9B890ECB}
+		static const GUID guid_select_nonlibrary = { 0x22d1a566, 0xbed6, 0x46da,{ 0xbd, 0x9e, 0xc, 0xcc, 0x9b, 0x89, 0xe, 0xcb } };
+
+
 		// {177EF689-FB2A-41B7-BF28-7A3BEB511B72}
 		static const GUID guid_findallnonlibrary = { 0x177ef689, 0xfb2a, 0x41b7,{ 0xbf, 0x28, 0x7a, 0x3b, 0xeb, 0x51, 0x1b, 0x72 } };
 
 
 		switch (p_index) {
 		case cmd_select_dead: return guid_select_dead;
+		case cmd_select_nonlibrary: return guid_select_nonlibrary;
 		case cmd_findalldead: return guid_findalldead;
 		case cmd_findallnonlibrary: return guid_findallnonlibrary;
 		default: uBugCheck(); // should never happen unless somebody called us with invalid parameters - bail
@@ -49,6 +55,7 @@ public:
 	void get_name(t_uint32 p_index, pfc::string_base & p_out) {
 		switch (p_index) {
 		case cmd_select_dead: p_out = "Select dead items in current playlist"; break;
+		case cmd_select_nonlibrary: p_out = "Select non-library items in current playlist"; break;
 		case cmd_findalldead: p_out = "Find dead items across all playlists"; break;
 		case cmd_findallnonlibrary: p_out = "Find all non-library items in all playlists"; break;
 		default: uBugCheck(); // should never happen unless somebody called us with invalid parameters - bail
@@ -57,6 +64,7 @@ public:
 	bool get_description(t_uint32 p_index, pfc::string_base & p_out) {
 		switch (p_index) {
 		case cmd_select_dead: p_out = "Selects all dead items in current playlist."; return true;
+		case cmd_select_nonlibrary: p_out = "Selects all non-library items in current playlist."; return true;
 		case cmd_findalldead: p_out = "Finds all dead items in all playlists and dumps them into a new playlist. Doesn't remove duplicates."; return true;
 		case cmd_findallnonlibrary: p_out = "Finds all non-library items in all playlists and dumps them into a new playlist. Doesn't remove duplicates."; return true;
 		default: uBugCheck(); // should never happen unless somebody called us with invalid parameters - bail
@@ -68,11 +76,12 @@ public:
 	void execute(t_uint32 p_index, service_ptr_t<service_base> p_callback) {
 		switch (p_index) {
 		case cmd_select_dead:
-			//popup_message::g_show("This is a sample menu command.", "Blah");
 			selectDeadItemsInActivePlaylist();
 			break;
+		case cmd_select_nonlibrary:
+			selectNonLibraryItemsInActivePlaylist();
+			break;
 		case cmd_findalldead:
-			//popup_message::g_show("Here was a function call to RunPlaybackStateDemo().", "Blah");
 			findAllDeadItemsInAllPlaylists();
 			break;
 		case cmd_findallnonlibrary:

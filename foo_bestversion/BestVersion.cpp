@@ -495,6 +495,32 @@ void selectDeadItemsInActivePlaylist()
 	pm->activeplaylist_set_selection(bit_array_true(), mask);
 }
 
+void selectNonLibraryItemsInActivePlaylist()
+{
+	static_api_ptr_t<playlist_manager> pm;
+	static_api_ptr_t<library_manager> lm;
+	size_t active_playlist = pm->get_active_playlist();
+	pfc::list_t<metadb_handle_ptr> all_tracks;
+	pm->playlist_get_all_items(active_playlist, all_tracks);
+
+	unsigned total = pm->activeplaylist_get_item_count();
+	bit_array_bittable mask(total);
+
+	for (t_size index = 0; index < all_tracks.get_count(); index++)
+	{
+		if (strstr(all_tracks[index]->get_path(), "3dydfy") == NULL && !lm->is_item_in_library(all_tracks[index]))
+		{
+			mask.set(index, true);
+		}
+		else
+		{
+			mask.set(index, false);
+		}
+	}
+
+	pm->activeplaylist_set_selection(bit_array_true(), mask);
+}
+
 void findAllNonLibraryItemsInAllPlaylists()
 {
 	static_api_ptr_t<playlist_manager> pm;
