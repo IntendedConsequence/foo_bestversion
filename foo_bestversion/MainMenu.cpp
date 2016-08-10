@@ -4,11 +4,14 @@
 
 #include "BestVersion.h"
 //#include "LastFm.h"
-//#include "PlaylistGenerator.h"
+#include "PlaylistGenerator.h"
 
 //#include <map>
 
 using namespace bestversion;
+
+
+void findAllDeadItemsInAllPlaylists();
 
 // {EC9EB231-1C89-47BA-AF87-811D80096B86}
 static const GUID g_mainmenu_group_id = { 0xec9eb231, 0x1c89, 0x47ba,{ 0xaf, 0x87, 0x81, 0x1d, 0x80, 0x9, 0x6b, 0x86 } };
@@ -94,3 +97,94 @@ public:
 };
 
 static mainmenu_commands_factory_t<mainmenu_edit_commands> g_mainmenu_commands_sample_factory;
+
+
+class DeadItemsPlaylistGenerator : public threaded_process_callback
+{
+private:
+	static_api_ptr_t<playlist_manager> pm;
+	pfc::list_t<metadb_handle_ptr> all_playlist_tracks;
+	pfc::list_t<metadb_handle_ptr> dead_tracks;
+	bool success;
+
+public:
+	DeadItemsPlaylistGenerator()
+		: success(false)
+	{
+	}
+
+	virtual void on_init(HWND /*p_wnd*/)
+	{
+		pfc::list_t<metadb_handle_ptr> tracks;
+		t_size playlist_count = pm->get_playlist_count();
+		for (t_size playlist_index = 0; playlist_index < playlist_count; playlist_index++)
+		{
+			pm->playlist_get_all_items(playlist_index, tracks);
+			all_playlist_tracks.add_items(tracks);
+		}
+	}
+
+	virtual void run(threaded_process_status& p_status, abort_callback& p_abort)
+	{
+		try
+		{
+			console::info("Finding all dead items in all playlists...");
+
+			p_status.set_item("Finding all dead items in all playlists...");
+			p_abort.check();
+
+			for (t_size index = 0; index < all_playlist_tracks.get_count(); index++)
+			{
+				p_status.set_progress(index, all_playlist_tracks.get_count());
+				p_abort.check();
+				if (strstr(all_playlist_tracks[index]->get_path(), "3dydfy") == NULL)
+				{
+					if (!filesystem::g_exists(all_playlist_tracks[index]->get_path(), p_abort))
+					{
+						dead_tracks.add_item(all_playlist_tracks[index]);
+					}
+				}
+			}
+
+			if (dead_tracks.get_count() == 0)
+			{
+				throw pfc::exception("Did not find enough dead tracks to make a playlist");
+			}
+
+			success = true;
+			p_abort.check();
+		}
+		catch (exception_aborted&)
+		{
+			success = false;
+		}
+	}
+
+	virtual void on_done(HWND /*p_wnd*/, bool /*p_was_aborted*/)
+	{
+		if (!success)
+		{
+			return;
+		}
+
+		generatePlaylistFromTracks(dead_tracks, "[foo_bestversion]DEAD ITEMS");
+	}
+};
+
+void findAllDeadItemsInAllPlaylists()
+{
+	std::string title("Generating dead tracks playlist");
+
+	// New this up since it's going to live on another thread, which will delete it when it's ready.
+	auto generator = new service_impl_t<DeadItemsPlaylistGenerator>();
+
+	static_api_ptr_t<threaded_process> tp;
+
+	tp->run_modeless(
+		generator,
+		tp->flag_show_abort | tp->flag_show_item | tp->flag_show_progress | tp->flag_show_delayed,
+		core_api::get_main_window(),
+		title.c_str(),
+		pfc_infinite
+	);
+}
